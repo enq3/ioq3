@@ -1,0 +1,126 @@
+From bcba5ebc20393757c5a9bb2c16bfed319914bc8d Mon Sep 17 00:00:00 2001
+From: enq3 <>
+Date: Sat, 2 Dec 2017 12:06:34 +0300
+Subject: [PATCH] Simple spam filter by keywords.
+
+---
+ code/client/cl_console.c | 58 ++++++++++++++++++++++++++++++++++++++++++++++++
+ code/client/cl_main.c    |  5 +++++
+ code/client/client.h     |  2 ++
+ 3 files changed, 65 insertions(+)
+
+diff --git a/code/client/cl_console.c b/code/client/cl_console.c
+index 6a65bb79..7d724f52 100644
+--- a/code/client/cl_console.c
++++ b/code/client/cl_console.c
+@@ -431,6 +431,15 @@ All console printing must go through this in order to be logged to disk
+ If no console is visible, the text will appear at the top of the game window
+ ================
+ */
++
++qboolean isTextContainString(const char *s, const char *find) {
++	if (find && strlen(find) > 0) {
++		const char *excludeText = Q_stristr(s, find);
++		return excludeText && strlen(excludeText) > 0;
++	}
++	return qfalse;
++}
++
+ void CL_ConsolePrint( char *txt ) {
+ 	int		y, l;
+ 	unsigned char	c;
+@@ -450,6 +459,55 @@ void CL_ConsolePrint( char *txt ) {
+ 		return;
+ 	}
+ 	
++	qboolean ignoreFilter = cl_consoleAllowText && isTextContainString(txt, cl_consoleAllowText->string);
++	if (!ignoreFilter) {
++		ignoreFilter = isTextContainString(txt, "cl_consoleIgnoreText");
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was caught by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was pummeled by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was machinegunned by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was gunned down by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "ate");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s grenade");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was shredded by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s shrapnel");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s rocket");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "almost dodged");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was melted by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s plasmagun");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was railed by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was electrocuted by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was machinegunned by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was blasted by");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s BFG");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "tried to invade");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s personal space");}
++		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was killed by");}	
++		if (!ignoreFilter) {
++			if(cl_consoleIgnoreText && strlen(cl_consoleIgnoreText->string) > 0) {		
++				int tokenFounded = 0;
++				char temp[strlen(txt)];
++				strcpy(temp, txt);
++				Q_CleanStr( temp );
++				char pattern[strlen(cl_consoleIgnoreText->string)+1];
++				strcpy(pattern, cl_consoleIgnoreText->string);
++				strcat(pattern, ",");
++				char * tokenize = strtok(pattern, ",");
++				while (tokenize != NULL)
++				{
++					//const char *founded = Q_stristr(temp, tokenize);
++					if (isTextContainString(temp, tokenize)) {
++						tokenFounded = 1;
++						break;
++					}
++					tokenize = strtok (NULL, ",");
++				}
++				if (tokenFounded == 1) {
++					return;
++				}
++			}
++		}
++	}
++	
+ 	if (!con.initialized) {
+ 		con.color[0] = 
+ 		con.color[1] = 
+diff --git a/code/client/cl_main.c b/code/client/cl_main.c
+index fde9fa10..f4f9b74c 100644
+--- a/code/client/cl_main.c
++++ b/code/client/cl_main.c
+@@ -122,6 +122,9 @@ cvar_t	*cl_consoleKeys;
+ 
+ cvar_t	*cl_rate;
+ 
++cvar_t  *cl_consoleIgnoreText;
++cvar_t  *cl_consoleAllowText;
++
+ clientActive_t		cl;
+ clientConnection_t	clc;
+ clientStatic_t		cls;
+@@ -3614,6 +3617,8 @@ void CL_Init( void ) {
+ 
+ 	// ~ and `, as keys and characters
+ 	cl_consoleKeys = Cvar_Get( "cl_consoleKeys", "~ ` 0x7e 0x60", CVAR_ARCHIVE);
++	cl_consoleIgnoreText = Cvar_Get( "cl_consoleIgnoreText", "", CVAR_ARCHIVE);
++	cl_consoleAllowText = Cvar_Get( "cl_consoleAllowText", "", CVAR_ARCHIVE);
+ 
+ 	// userinfo
+ 	Cvar_Get ("name", "UnnamedPlayer", CVAR_USERINFO | CVAR_ARCHIVE );
+diff --git a/code/client/client.h b/code/client/client.h
+index 0d3e1c33..c5925c91 100644
+--- a/code/client/client.h
++++ b/code/client/client.h
+@@ -425,6 +425,8 @@ extern	cvar_t	*cl_lanForcePackets;
+ extern	cvar_t	*cl_autoRecordDemo;
+ 
+ extern	cvar_t	*cl_consoleKeys;
++extern	cvar_t	*cl_consoleIgnoreText;
++extern	cvar_t	*cl_consoleAllowText;
+ 
+ #ifdef USE_MUMBLE
+ extern	cvar_t	*cl_useMumble;
+-- 
+2.14.2.windows.1
+
