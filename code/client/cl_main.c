@@ -122,6 +122,9 @@ cvar_t	*cl_consoleKeys;
 
 cvar_t	*cl_rate;
 
+cvar_t  *cl_consoleIgnoreText;
+cvar_t  *cl_consoleAllowText;
+
 clientActive_t		cl;
 clientConnection_t	clc;
 clientStatic_t		cls;
@@ -3614,6 +3617,8 @@ void CL_Init( void ) {
 
 	// ~ and `, as keys and characters
 	cl_consoleKeys = Cvar_Get( "cl_consoleKeys", "~ ` 0x7e 0x60", CVAR_ARCHIVE);
+	cl_consoleIgnoreText = Cvar_Get( "cl_consoleIgnoreText", "", CVAR_ARCHIVE);
+	cl_consoleAllowText = Cvar_Get( "cl_consoleAllowText", "", CVAR_ARCHIVE);
 
 	// userinfo
 	Cvar_Get ("name", "UnnamedPlayer", CVAR_USERINFO | CVAR_ARCHIVE );

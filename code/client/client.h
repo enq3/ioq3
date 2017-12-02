@@ -425,6 +425,8 @@ extern	cvar_t	*cl_lanForcePackets;
 extern	cvar_t	*cl_autoRecordDemo;
 
 extern	cvar_t	*cl_consoleKeys;
+extern	cvar_t	*cl_consoleIgnoreText;
+extern	cvar_t	*cl_consoleAllowText;
 
 #ifdef USE_MUMBLE
 extern	cvar_t	*cl_useMumble;

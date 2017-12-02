@@ -431,6 +431,15 @@ All console printing must go through this in order to be logged to disk
 If no console is visible, the text will appear at the top of the game window
 ================
 */
+
+qboolean isTextContainString(const char *s, const char *find) {
+	if (find && strlen(find) > 0) {
+		const char *excludeText = Q_stristr(s, find);
+		return excludeText && strlen(excludeText) > 0;
+	}
+	return qfalse;
+}
+
 void CL_ConsolePrint( char *txt ) {
 	int		y, l;
 	unsigned char	c;
@@ -448,6 +457,55 @@ void CL_ConsolePrint( char *txt ) {
 	// for some demos we don't want to ever show anything on the console
 	if ( cl_noprint && cl_noprint->integer ) {
 		return;
+	}
+	
+	qboolean ignoreFilter = cl_consoleAllowText && isTextContainString(txt, cl_consoleAllowText->string);
+	if (!ignoreFilter) {
+		ignoreFilter = isTextContainString(txt, "cl_consoleIgnoreText");
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was caught by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was pummeled by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was machinegunned by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was gunned down by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "ate");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s grenade");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was shredded by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s shrapnel");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s rocket");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "almost dodged");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was melted by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s plasmagun");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was railed by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was electrocuted by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was machinegunned by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was blasted by");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s BFG");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "tried to invade");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "'s personal space");}
+		if (!ignoreFilter) { ignoreFilter = isTextContainString(txt, "was killed by");}	
+		if (!ignoreFilter) {
+			if(cl_consoleIgnoreText && strlen(cl_consoleIgnoreText->string) > 0) {		
+				int tokenFounded = 0;
+				char temp[strlen(txt)];
+				strcpy(temp, txt);
+				Q_CleanStr( temp );
+				char pattern[strlen(cl_consoleIgnoreText->string)+1];
+				strcpy(pattern, cl_consoleIgnoreText->string);
+				strcat(pattern, ",");
+				char * tokenize = strtok(pattern, ",");
+				while (tokenize != NULL)
+				{
+					//const char *founded = Q_stristr(temp, tokenize);
+					if (isTextContainString(temp, tokenize)) {
+						tokenFounded = 1;
+						break;
+					}
+					tokenize = strtok (NULL, ",");
+				}
+				if (tokenFounded == 1) {
+					return;
+				}
+			}
+		}
 	}
 	
 	if (!con.initialized) {
